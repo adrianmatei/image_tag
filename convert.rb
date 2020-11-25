@@ -33,7 +33,7 @@ class RailsImageTag
   # construct and return the erb containing the new image_tag call
   def to_erb
     url = @img['src']
-    url.gsub!("/images/", "")
+    url.sub!("/images/", "")
 
     options_str = process_options
     "<%= image_tag '#{url}'#{options_str} %>"

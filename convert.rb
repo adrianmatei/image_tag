@@ -36,7 +36,7 @@ class RailsImageTag
     url.sub!("/images/", "")
 
     options_str = process_options
-    "<%= image_tag '#{url}'#{options_str} %>"
+    "<%= image_tag('#{url}'#{options_str})%>"
   end
 
   # convert the img tag params to image_tag options

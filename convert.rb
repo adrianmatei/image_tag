@@ -23,7 +23,11 @@ class RailsImageTag
     { :name => :alt },
     { :name => :height, :type => :int },
     { :name => :width, :type => :int },
-    { :name => :class}
+    { :name => :class},
+    { :name => :title},
+    { :name => :border},
+    { :name => :style},
+    { :name => :id}
   ]
 
   def initialize(img)
@@ -34,9 +38,26 @@ class RailsImageTag
   def to_erb
     url = @img['src']
     url.sub!("/images/", "")
+    data_pixel = ''
+
+    # resolve special data-pixel-density-2 case
+    if @img.to_s.include? 'data-pixel-density-2'
+      data_value = @img['data-pixel-density-2']
+      data_value.sub!("/images/", "")
+      data_pixel = ", 'data-pixel-density-2': image_path('#{data_value}')"
+    end
 
     options_str = process_options
-    "<%= image_tag('#{url}'#{options_str})%>"
+
+    if url.include?("<%= ") && url.include?(" %>")
+      url.sub!("<%= ", '#{')
+      url.sub!(" %>", "}")
+      url_string = "\"#{url.to_s}\""
+
+      "<%= image_tag(#{url_string}#{options_str}#{data_pixel})%>"
+    else
+      "<%= image_tag('#{url}'#{options_str}#{data_pixel})%>"
+    end
   end
 
   # convert the img tag params to image_tag options
@@ -60,8 +81,9 @@ class RailsImageTag
       data_attribute = (removed_left_content.slice(0..(removed_left_content.index('=')))).tr('=', '')
       data_value = @img[data_attribute]
 
-      options_erb[data_attribute] = "'#{data_attribute}': '#{data_value}'"
-
+      if data_attribute != 'data-pixel-density-2'
+        options_erb[data_attribute] = "'#{data_attribute}': '#{data_value}'"
+      end
       img_string.gsub!(data_attribute, "")
     end
 
@@ -95,12 +117,12 @@ class HtmlDoc
 
       original = img.to_html.gsub("\">", "\" />").gsub("\" >", "\" />").delete("\\")
       original2 = img.to_html.gsub("\">", "\"/>").gsub("\" >", "\" />").delete("\\")
+      original3 = img.to_html.gsub("\">", "\">").gsub("\" >", "\" />").delete("\\")
       image_tag = RailsImageTag.new(img).to_erb
 
       @content.gsub!(original, image_tag)
       @content.gsub!(original2, image_tag)
-
-      puts "Generated image_tag:"
+      @content.gsub!(original3, image_tag)
       puts image_tag
     end
 
